@@ -2,6 +2,9 @@
 #include <vector>
 
 #include "Utils.h"
+#include "CImg.h"
+
+using namespace cimg_library;
 
 void print_help() {
 	std::cerr << "Application usage:" << std::endl;
@@ -16,7 +19,7 @@ int main(int argc, char **argv) {
 	//Part 1 - handle command line options such as device selection, verbosity, etc.
 	int platform_id = 0;
 	int device_id = 0;
-
+	string image_filename = "test.pgm";
 	for (int i = 1; i < argc; i++)	{
 		if ((strcmp(argv[i], "-p") == 0) && (i < (argc - 1))) { platform_id = atoi(argv[++i]); }
 		else if ((strcmp(argv[i], "-d") == 0) && (i < (argc - 1))) { device_id = atoi(argv[++i]); }
@@ -26,6 +29,8 @@ int main(int argc, char **argv) {
 
 	//detect any potential exceptions
 	try {
+		CImg<unsigned char> image_input(image_filename.c_str());
+		CImgDisplay disp_input(image_input, "input");
 		//Part 2 - host operations
 		//2.1 Select computing devices
 		cl::Context context = GetContext(platform_id, device_id);
@@ -54,11 +59,9 @@ int main(int argc, char **argv) {
 			throw err;
 		}
 
-		typedef int mytype;
-
 		//Part 3 - memory allocation
 		//host - input
-		std::vector<mytype> A(10, 1);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
+		std::vector<int> A(10, 1);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
 
 		//the following part adjusts the length of the input vector so it can be run for a specific workgroup size
 		//if the total input length is divisible by the workgroup size
@@ -77,12 +80,12 @@ int main(int argc, char **argv) {
 		}
 
 		size_t input_elements = A.size();//number of input elements
-		size_t input_size = A.size()*sizeof(mytype);//size in bytes
+		size_t input_size = A.size()*sizeof(int);//size in bytes
 		size_t nr_groups = input_elements / local_size;
 
 		//host - output
-		std::vector<mytype> B(input_elements);
-		size_t output_size = B.size()*sizeof(mytype);//size in bytes
+		std::vector<int> B(input_elements);
+		size_t output_size = B.size()*sizeof(int);//size in bytes
 
 		//device - buffers
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
@@ -112,6 +115,8 @@ int main(int argc, char **argv) {
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
 	}
-
+	catch (CImgException& err) {
+		std::cerr << "ERROR: " << err.what() << std::endl;
+	}
 	return 0;
 }
