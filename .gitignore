@@ -17,7 +17,7 @@ desktop.ini
 *.sdf
 *.suo
 *.user
-
+*.vcxproj
 !x64/glut32.dll
 !x86/glut32.dll
 
