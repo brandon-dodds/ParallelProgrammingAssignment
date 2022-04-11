@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
 		//Part 3 - memory allocation
 		//host - input
-		std::vector<int> A(10, 1);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
+		std::vector<int> A(10, 2);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
 
 		//the following part adjusts the length of the input vector so it can be run for a specific workgroup size
 		//if the total input length is divisible by the workgroup size
@@ -91,28 +91,34 @@ int main(int argc, char **argv) {
 		//device - buffers
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, image_input.size());
 		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, image_input.size());
-
+		cl::Buffer buffer_C(context, CL_MEM_READ_WRITE, input_size);
 		//Part 4 - device operations
 
 		//4.1 copy array A to and initialise other arrays on device memory
 		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, image_input.size(), &image_input.data()[0]);
+		queue.enqueueWriteBuffer(buffer_C, CL_TRUE, 0, input_size, &A.data()[0]);
 		//queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
 		//4.2 Setup and execute all kernels (i.e. device code)
 		cl::Kernel kernel_1 = cl::Kernel(program, "wtf");
 		kernel_1.setArg(0, buffer_A);
 		kernel_1.setArg(1, buffer_B);
+		kernel_1.setArg(2, buffer_C);
 //		kernel_1.setArg(2, cl::Local(local_size*sizeof(mytype)));//local memory size
 
 		//call all kernels in a sequence
 		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
 
 		vector<unsigned char> output_buffer(image_input.size());
+		vector<int> output_vec(A.size());
 		//4.3 Copy the result from device to host
 		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_buffer.size(), &output_buffer.data()[0]);
+		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, input_size, &output_vec.data()[0]);
 
 		//std::cout << "A = " << A << std::endl;
 		//std::cout << "B = " << B << std::endl;
+		std::cout << "A = " << A << std::endl;
+		std::cout << "C = " << output_vec << std::endl;
 
 		CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
 		CImgDisplay disp_output(output_image, "output");

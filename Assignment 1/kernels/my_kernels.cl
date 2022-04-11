@@ -206,9 +206,8 @@ kernel void scan_add_adjust(global int* A, global const int* B) {
 	A[id] += B[gid];
 }
 
-kernel void wtf(global const uchar* A, global uchar* B) {
+kernel void wtf(global const uchar* A, global uchar* B, global int* hist_vec) {
 	int id = get_global_id(0);
-	
 	B[id] = A[id];
 	//this is just a copy operation, modify to filter out the individual colour channels
 }
