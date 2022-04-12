@@ -208,6 +208,10 @@ kernel void scan_add_adjust(global int* A, global const int* B) {
 
 kernel void wtf(global const uchar* A, global uchar* B, global int* hist_vec) {
 	int id = get_global_id(0);
+	//assumes that H has been initialised to 0
+	int bin_index = A[id];//take value as a bin index
+
+	atomic_inc(&hist_vec[bin_index]);//serial operation, not very efficient!
 	B[id] = A[id];
 	//this is just a copy operation, modify to filter out the individual colour channels
 }
