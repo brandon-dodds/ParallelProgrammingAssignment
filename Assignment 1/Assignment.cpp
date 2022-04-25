@@ -56,21 +56,32 @@ int main(int argc, char** argv) {
 		}
 
 		std::vector<int> histogram(256, 0);
-		size_t input_size = histogram.size() * sizeof(int);
+		std::vector<int> cumulative_histogram(256, 0);
+		size_t histogram_size_in_bites = histogram.size() * sizeof(int);
 
-		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, image_input.size());
-		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, input_size);
+		cl::Buffer image_buffer(context, CL_MEM_READ_ONLY, image_input.size());
+		cl::Buffer histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
+		cl::Buffer cumulative_histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
 
-		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, image_input.size(), &image_input.data()[0]);
-		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, input_size, &histogram.data()[0]);
+		queue.enqueueWriteBuffer(image_buffer, CL_TRUE, 0, image_input.size(), &image_input.data()[0]);
+		queue.enqueueWriteBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &histogram.data()[0]);
+		queue.enqueueWriteBuffer(cumulative_histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &cumulative_histogram.data()[0]);
 
 		cl::Kernel histogram_simple = cl::Kernel(program, "Histogram_Normal_B");
-		histogram_simple.setArg(0, buffer_A);
-		histogram_simple.setArg(1, buffer_B);
+		histogram_simple.setArg(0, image_buffer);
+		histogram_simple.setArg(1, histogram_buffer);
 
 		queue.enqueueNDRangeKernel(histogram_simple, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
 
-		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, input_size, &histogram.data()[0]);
+		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &histogram.data()[0]);
+
+		cl::Kernel histogram_cumulative = cl::Kernel(program, "Cumulative_Histogram");
+		histogram_cumulative.setArg(0, histogram_buffer);
+		histogram_cumulative.setArg(1, cumulative_histogram_buffer);
+
+		queue.enqueueNDRangeKernel(histogram_cumulative, cl::NullRange, cl::NDRange(histogram.size()), cl::NullRange);
+
+		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &cumulative_histogram.data()[0]);
 
 		std::cout << "Histogram = " << histogram << std::endl;
 
