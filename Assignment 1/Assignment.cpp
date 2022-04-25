@@ -56,8 +56,6 @@ int main(int argc, char** argv) {
 		}
 
 		std::vector<int> histogram(256, 0);
-
-		size_t input_elements = histogram.size();
 		size_t input_size = histogram.size() * sizeof(int);
 
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, image_input.size());
