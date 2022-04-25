@@ -15,20 +15,20 @@ void print_help() {
 	std::cerr << "  -h : print this message" << std::endl;
 }
 
-int main(int argc, char **argv) {
-	//Part 1 - handle command line options such as device selection, verbosity, etc.
+int main(int argc, char** argv) {
+
 	int platform_id = 0;
 	int device_id = 0;
 	string image_filename = "test.pgm";
-	for (int i = 1; i < argc; i++)	{
+	for (int i = 1; i < argc; i++) {
 		if ((strcmp(argv[i], "-p") == 0) && (i < (argc - 1))) { platform_id = atoi(argv[++i]); }
 		else if ((strcmp(argv[i], "-d") == 0) && (i < (argc - 1))) { device_id = atoi(argv[++i]); }
 		else if (strcmp(argv[i], "-l") == 0) { std::cout << ListPlatformsDevices() << std::endl; }
-		else if (strcmp(argv[i], "-h") == 0) { print_help(); return 0;}
+		else if (strcmp(argv[i], "-h") == 0) { print_help(); return 0; }
 	}
 
 	cimg::exception_mode(0);
-	//detect any potential exceptions
+
 	try {
 		CImg<unsigned char> image_input(image_filename.c_str());
 		CImgDisplay disp_input(image_input, "input");
@@ -65,17 +65,17 @@ int main(int argc, char **argv) {
 
 		if (padding_size) {
 
-			std::vector<int> A_ext(local_size-padding_size, 0);
+			std::vector<int> A_ext(local_size - padding_size, 0);
 
 			histogram.insert(histogram.end(), A_ext.begin(), A_ext.end());
 		}
 
 		size_t input_elements = histogram.size();
-		size_t input_size = histogram.size()*sizeof(int);
+		size_t input_size = histogram.size() * sizeof(int);
 		size_t nr_groups = input_elements / local_size;
 
 		std::vector<int> B(input_elements);
-		size_t output_size = B.size()*sizeof(int);//size in bytes
+		size_t output_size = B.size() * sizeof(int);
 
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, image_input.size());
 		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, input_size);
