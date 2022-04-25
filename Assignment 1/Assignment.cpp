@@ -62,14 +62,14 @@ int main(int argc, char **argv) {
 
 		//Part 3 - memory allocation
 		//host - input
-		std::vector<int> A(256, 0);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
+		std::vector<int> histogram(256, 0);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
 
 		//the following part adjusts the length of the input vector so it can be run for a specific workgroup size
 		//if the total input length is divisible by the workgroup size
 		//this makes the code more efficient
 		size_t local_size = 10;
 
-		size_t padding_size = A.size() % local_size;
+		size_t padding_size = histogram.size() % local_size;
 
 		//if the input vector is not a multiple of the local_size
 		//insert additional neutral elements (0 for addition) so that the total will not be affected
@@ -77,11 +77,11 @@ int main(int argc, char **argv) {
 			//create an extra vector with neutral values
 			std::vector<int> A_ext(local_size-padding_size, 0);
 			//append that extra vector to our input
-			A.insert(A.end(), A_ext.begin(), A_ext.end());
+			histogram.insert(histogram.end(), A_ext.begin(), A_ext.end());
 		}
 
-		size_t input_elements = A.size();//number of input elements
-		size_t input_size = A.size()*sizeof(int);//size in bytes
+		size_t input_elements = histogram.size();//number of input elements
+		size_t input_size = histogram.size()*sizeof(int);//size in bytes
 		size_t nr_groups = input_elements / local_size;
 
 		//host - output
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 
 		//4.1 copy array A to and initialise other arrays on device memory
 		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, image_input.size(), &image_input.data()[0]);
-		queue.enqueueWriteBuffer(buffer_C, CL_TRUE, 0, input_size, &A.data()[0]);
+		queue.enqueueWriteBuffer(buffer_C, CL_TRUE, 0, input_size, &histogram.data()[0]);
 		//queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
 		//4.2 Setup and execute all kernels (i.e. device code)
@@ -110,15 +110,13 @@ int main(int argc, char **argv) {
 		queue.enqueueNDRangeKernel(histogram_simple, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
 
 		vector<unsigned char> output_buffer(image_input.size());
-		vector<int> output_vec(A.size());
 		//4.3 Copy the result from device to host
 		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_buffer.size(), &output_buffer.data()[0]);
-		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, input_size, &output_vec.data()[0]);
+		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, input_size, &histogram.data()[0]);
 
 		//std::cout << "A = " << A << std::endl;
 		//std::cout << "B = " << B << std::endl;
-		std::cout << "Input Image = " << A << std::endl;
-		std::cout << "Output Histogram = " << output_vec << std::endl;
+		std::cout << "Histogram = " << histogram << std::endl;
 
 		CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
 		CImgDisplay disp_output(output_image, "output");
