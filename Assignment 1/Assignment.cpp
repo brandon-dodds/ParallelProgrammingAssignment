@@ -57,25 +57,8 @@ int main(int argc, char** argv) {
 
 		std::vector<int> histogram(256, 0);
 
-
-		size_t local_size = 10;
-
-		size_t padding_size = histogram.size() % local_size;
-
-
-		if (padding_size) {
-
-			std::vector<int> A_ext(local_size - padding_size, 0);
-
-			histogram.insert(histogram.end(), A_ext.begin(), A_ext.end());
-		}
-
 		size_t input_elements = histogram.size();
 		size_t input_size = histogram.size() * sizeof(int);
-		size_t nr_groups = input_elements / local_size;
-
-		std::vector<int> B(input_elements);
-		size_t output_size = B.size() * sizeof(int);
 
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, image_input.size());
 		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, input_size);
