@@ -1,10 +1,9 @@
-kernel void Histogram_Normal_B(global const uchar* A, global uchar* B, global int* hist_vec) {
+kernel void Histogram_Normal_B(global const uchar* input_image, global int* hist_vec) {
 	int id = get_global_id(0);
 	//assumes that H has been initialised to 0
-	int bin_index = A[id];//take value as a bin index
+	int bin_index = input_image[id];//take value as a bin index
 
 	atomic_inc(&hist_vec[bin_index]);//serial operation, not very efficient!
-	B[id] = A[id];
 	//this is just a copy operation, modify to filter out the individual colour channels
 }
 

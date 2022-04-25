@@ -90,7 +90,6 @@ int main(int argc, char **argv) {
 
 		//device - buffers
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, image_input.size());
-		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, image_input.size());
 		cl::Buffer buffer_C(context, CL_MEM_READ_WRITE, input_size);
 		//Part 4 - device operations
 
@@ -102,29 +101,22 @@ int main(int argc, char **argv) {
 		//4.2 Setup and execute all kernels (i.e. device code)
 		cl::Kernel histogram_simple = cl::Kernel(program, "Histogram_Normal_B");
 		histogram_simple.setArg(0, buffer_A);
-		histogram_simple.setArg(1, buffer_B);
-		histogram_simple.setArg(2, buffer_C);
+		histogram_simple.setArg(1, buffer_C);
 //		kernel_1.setArg(2, cl::Local(local_size*sizeof(mytype)));//local memory size
 
 		//call all kernels in a sequence
 		queue.enqueueNDRangeKernel(histogram_simple, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
 
-		vector<unsigned char> output_buffer(image_input.size());
 		//4.3 Copy the result from device to host
-		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_buffer.size(), &output_buffer.data()[0]);
 		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, input_size, &histogram.data()[0]);
 
 		//std::cout << "A = " << A << std::endl;
 		//std::cout << "B = " << B << std::endl;
 		std::cout << "Histogram = " << histogram << std::endl;
 
-		CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
-		CImgDisplay disp_output(output_image, "output");
-
-		while (!disp_input.is_closed() && !disp_output.is_closed()
-			&& !disp_input.is_keyESC() && !disp_output.is_keyESC()) {
+		while (!disp_input.is_closed()
+			&& !disp_input.is_keyESC()) {
 			disp_input.wait(1);
-			disp_output.wait(1);
 		}
 	}
 	catch (cl::Error err) {
