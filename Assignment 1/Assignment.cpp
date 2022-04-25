@@ -100,14 +100,14 @@ int main(int argc, char **argv) {
 		//queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
 		//4.2 Setup and execute all kernels (i.e. device code)
-		cl::Kernel kernel_1 = cl::Kernel(program, "wtf");
-		kernel_1.setArg(0, buffer_A);
-		kernel_1.setArg(1, buffer_B);
-		kernel_1.setArg(2, buffer_C);
+		cl::Kernel histogram_simple = cl::Kernel(program, "Histogram_Normal_B");
+		histogram_simple.setArg(0, buffer_A);
+		histogram_simple.setArg(1, buffer_B);
+		histogram_simple.setArg(2, buffer_C);
 //		kernel_1.setArg(2, cl::Local(local_size*sizeof(mytype)));//local memory size
 
 		//call all kernels in a sequence
-		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
+		queue.enqueueNDRangeKernel(histogram_simple, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
 
 		vector<unsigned char> output_buffer(image_input.size());
 		vector<int> output_vec(A.size());
@@ -117,8 +117,8 @@ int main(int argc, char **argv) {
 
 		//std::cout << "A = " << A << std::endl;
 		//std::cout << "B = " << B << std::endl;
-		std::cout << "A = " << A << std::endl;
-		std::cout << "C = " << output_vec << std::endl;
+		std::cout << "Input Image = " << A << std::endl;
+		std::cout << "Output Histogram = " << output_vec << std::endl;
 
 		CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
 		CImgDisplay disp_output(output_image, "output");
