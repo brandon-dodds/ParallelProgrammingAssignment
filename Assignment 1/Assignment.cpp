@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &cumulative_histogram.data()[0]);
 
 		std::cout << "Histogram = " << histogram << std::endl;
+		std::cout << "Cumulative Histogram" << cumulative_histogram << std::endl;
 
 		while (!disp_input.is_closed()
 			&& !disp_input.is_keyESC()) {
