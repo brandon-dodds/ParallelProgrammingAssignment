@@ -57,6 +57,9 @@ int main(int argc, char** argv) {
 
 		std::vector<int> histogram(256, 0);
 		std::vector<int> cumulative_histogram(256, 0);
+		std::vector<int> normalised_histogram(256, 0);
+
+		int pixels = image_input.size();
 		size_t histogram_size_in_bites = histogram.size() * sizeof(int);
 
 		cl::Buffer image_buffer(context, CL_MEM_READ_ONLY, image_input.size());
@@ -83,8 +86,16 @@ int main(int argc, char** argv) {
 
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &cumulative_histogram.data()[0]);
 
+		cl::Kernel histogram_normalise = cl::Kernel(program, "Normalise_Histogram");
+		histogram_normalise.setArg(0, histogram_buffer);
+		histogram_normalise.setArg(1, pixels);
+
+		queue.enqueueNDRangeKernel(histogram_normalise, cl::NullRange, cl::NDRange(histogram.size()), cl::NullRange);
+		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0]);
+		
 		std::cout << "Histogram = " << histogram << std::endl;
-		std::cout << "Cumulative Histogram" << cumulative_histogram << std::endl;
+		std::cout << "Cumulative Histogram = " << cumulative_histogram << std::endl;
+		std::cout << "Normalised Histogram = " << normalised_histogram << std::endl;
 
 		while (!disp_input.is_closed()
 			&& !disp_input.is_keyESC()) {

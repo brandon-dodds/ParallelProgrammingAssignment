@@ -22,3 +22,8 @@ kernel void Cumulative_Histogram(global int* histogram_vector, global int* buffe
 		C = histogram_vector; histogram_vector = buffer; buffer = C; //swap A & B between steps
 	}
 }
+
+kernel void Normalise_Histogram(global int* histogram_vector, int pixelsize) {
+	int id = get_global_id(0);
+	histogram_vector[id] = (float)histogram_vector[id] / pixelsize * 255;
+}
