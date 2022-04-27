@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0]);
 		
 		queue.enqueueWriteBuffer(normalised_histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0]);
-		std::vector<int> output_buffer(image_input.size());
+		std::vector<unsigned char> output_buffer(image_input.size());
 		cl::Kernel reverse_image = cl::Kernel(program, "back_projection");
 		reverse_image.setArg(0, image_buffer);
 		reverse_image.setArg(1, dev_image_output);
