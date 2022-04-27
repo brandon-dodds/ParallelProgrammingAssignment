@@ -4,6 +4,9 @@
 #include "Utils.h"
 #include "CImg.h"
 
+// This code is developed to produce three histograms and two images. It does this through using a simple histogram method. 
+// A Hillis-Steele scan and also a normalization function to create the LUT histogram. This is then used to calculate the intensity values.
+// For the final image, which is output to the screen.
 using namespace cimg_library;
 
 void print_help() {
