@@ -27,3 +27,11 @@ kernel void Normalise_Histogram(global int* histogram_vector, int pixelsize) {
 	int id = get_global_id(0);
 	histogram_vector[id] = (float)histogram_vector[id] / pixelsize * 255;
 }
+
+kernel void back_projection(global const uchar* image, global uchar* B, global int* histogram) {
+	int id = get_global_id(0);
+
+	int bin_index = image[id];
+
+	B[id] = histogram[bin_index];
+}

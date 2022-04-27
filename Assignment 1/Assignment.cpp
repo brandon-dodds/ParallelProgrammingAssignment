@@ -65,6 +65,8 @@ int main(int argc, char** argv) {
 		cl::Buffer image_buffer(context, CL_MEM_READ_ONLY, image_input.size());
 		cl::Buffer histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
 		cl::Buffer cumulative_histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
+		cl::Buffer normalised_histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
+		cl::Buffer dev_image_output(context, CL_MEM_READ_WRITE, image_input.size());
 
 		queue.enqueueWriteBuffer(image_buffer, CL_TRUE, 0, image_input.size(), &image_input.data()[0]);
 		queue.enqueueWriteBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &histogram.data()[0]);
@@ -93,13 +95,28 @@ int main(int argc, char** argv) {
 		queue.enqueueNDRangeKernel(histogram_normalise, cl::NullRange, cl::NDRange(histogram.size()), cl::NullRange);
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0]);
 		
+		queue.enqueueWriteBuffer(normalised_histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0]);
+		std::vector<int> output_buffer(image_input.size());
+		cl::Kernel reverse_image = cl::Kernel(program, "back_projection");
+		reverse_image.setArg(0, image_buffer);
+		reverse_image.setArg(1, dev_image_output);
+		reverse_image.setArg(2, normalised_histogram_buffer);
+
+		queue.enqueueNDRangeKernel(reverse_image, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
+
 		std::cout << "Histogram = " << histogram << std::endl;
 		std::cout << "Cumulative Histogram = " << cumulative_histogram << std::endl;
 		std::cout << "Normalised Histogram = " << normalised_histogram << std::endl;
 
-		while (!disp_input.is_closed()
-			&& !disp_input.is_keyESC()) {
+		queue.enqueueReadBuffer(dev_image_output, CL_TRUE, 0, output_buffer.size(), &output_buffer.data()[0]);
+
+		CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
+		CImgDisplay disp_output(output_image, "output");
+
+		while (!disp_input.is_closed() && !disp_output.is_closed()
+			&& !disp_input.is_keyESC() && !disp_output.is_keyESC()) {
 			disp_input.wait(1);
+			disp_output.wait(1);
 		}
 	}
 	catch (cl::Error err) {
