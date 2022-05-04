@@ -1,10 +1,9 @@
 kernel void Histogram_Normal_B(global const uchar* input_image, global int* hist_vec) {
 	int id = get_global_id(0);
-	//assumes that H has been initialised to 0
-	int bin_index = input_image[id];//take value as a bin index
+	
+	int bin_index = input_image[id];
 
-	atomic_inc(&hist_vec[bin_index]);//serial operation, not very efficient!
-	//this is just a copy operation, modify to filter out the individual colour channels
+	atomic_inc(&hist_vec[bin_index]);
 }
 
 kernel void Cumulative_Histogram(global int* histogram_vector, global int* buffer) {
@@ -17,9 +16,9 @@ kernel void Cumulative_Histogram(global int* histogram_vector, global int* buffe
 		if (id >= stride)
 			buffer[id] += histogram_vector[id - stride];
 
-		barrier(CLK_GLOBAL_MEM_FENCE); //sync the step
+		barrier(CLK_GLOBAL_MEM_FENCE); 
 
-		C = histogram_vector; histogram_vector = buffer; buffer = C; //swap A & B between steps
+		C = histogram_vector; histogram_vector = buffer; buffer = C; 
 	}
 }
 
