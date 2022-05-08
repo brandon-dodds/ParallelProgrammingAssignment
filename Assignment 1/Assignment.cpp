@@ -42,6 +42,7 @@ int main(int argc, char** argv) {
 
 		cl::CommandQueue queue(context, CL_QUEUE_PROFILING_ENABLE);
 		
+		// Event profiling.
 		cl::Event image_buffer_write;
 		cl::Event histogram_buffer_write;
 		cl::Event cumulative_histogram_write;
@@ -71,23 +72,24 @@ int main(int argc, char** argv) {
 			throw err;
 		}
 
+		// Create vectors.
 		std::vector<int> histogram(256, 0);
 		std::vector<int> cumulative_histogram(256, 0);
 		std::vector<int> normalised_histogram(256, 0);
 
 		int pixels = image_input.size();
 		size_t histogram_size_in_bites = histogram.size() * sizeof(int);
-
+		// Create buffers.
 		cl::Buffer image_buffer(context, CL_MEM_READ_ONLY, image_input.size());
 		cl::Buffer histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
 		cl::Buffer cumulative_histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
 		cl::Buffer normalised_histogram_buffer(context, CL_MEM_READ_WRITE, histogram_size_in_bites);
 		cl::Buffer dev_image_output(context, CL_MEM_READ_WRITE, image_input.size());
-
+		// Create Write buffer to OpenCL memory.
 		queue.enqueueWriteBuffer(image_buffer, CL_TRUE, 0, image_input.size(), &image_input.data()[0], NULL, &image_buffer_write);
 		queue.enqueueWriteBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &histogram.data()[0], NULL, &histogram_buffer_write);
 		queue.enqueueWriteBuffer(cumulative_histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &cumulative_histogram.data()[0], NULL, &cumulative_histogram_write);
-
+		// Run it through the Histogram program.
 		cl::Kernel histogram_simple = cl::Kernel(program, "Histogram_Normal_B");
 		histogram_simple.setArg(0, image_buffer);
 		histogram_simple.setArg(1, histogram_buffer);
@@ -95,7 +97,7 @@ int main(int argc, char** argv) {
 		queue.enqueueNDRangeKernel(histogram_simple, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange, NULL, &simple_histogram_NDRange);
 
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &histogram.data()[0], NULL, &histogram_buffer_read);
-
+		// Run it through Cumulative Histogram Program.
 		cl::Kernel histogram_cumulative = cl::Kernel(program, "Cumulative_Histogram");
 		histogram_cumulative.setArg(0, histogram_buffer);
 		histogram_cumulative.setArg(1, cumulative_histogram_buffer);
@@ -103,14 +105,14 @@ int main(int argc, char** argv) {
 		queue.enqueueNDRangeKernel(histogram_cumulative, cl::NullRange, cl::NDRange(histogram.size()), cl::NullRange, NULL, &cumulative_NDRange);
 
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &cumulative_histogram.data()[0], NULL, &cumulative_histogram_READ);
-
+		// Run it through Normalise program.
 		cl::Kernel histogram_normalise = cl::Kernel(program, "Normalise_Histogram");
 		histogram_normalise.setArg(0, histogram_buffer);
 		histogram_normalise.setArg(1, pixels);
 
 		queue.enqueueNDRangeKernel(histogram_normalise, cl::NullRange, cl::NDRange(histogram.size()), cl::NullRange, NULL, &histogram_normalize);
 		queue.enqueueReadBuffer(histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0], NULL, &histogram_normalize_READ);
-		
+		// Reverse the intensities to the image
 		queue.enqueueWriteBuffer(normalised_histogram_buffer, CL_TRUE, 0, histogram_size_in_bites, &normalised_histogram.data()[0], NULL, &normalized_histogram_WRITE);
 		std::vector<unsigned char> output_buffer(image_input.size());
 		cl::Kernel reverse_image = cl::Kernel(program, "back_projection");
@@ -119,7 +121,7 @@ int main(int argc, char** argv) {
 		reverse_image.setArg(2, normalised_histogram_buffer);
 
 		queue.enqueueNDRangeKernel(reverse_image, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange, NULL, &reverse_image_NDRange);
-
+		// Output histograms, output display and profiling.
 		std::cout << "Histogram = " << histogram << std::endl;
 		std::cout << "Cumulative Histogram = " << cumulative_histogram << std::endl;
 		std::cout << "Normalised Histogram = " << normalised_histogram << std::endl;
